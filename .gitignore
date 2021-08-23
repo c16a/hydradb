@@ -1,0 +1,7 @@
+bazel-bin
+bazel-hydradb
+bazel-out
+bazel-testlogs
+
+.ijwb
+*.iml
