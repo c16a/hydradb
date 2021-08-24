@@ -28,6 +28,7 @@ jobs:
 
       - name: Bazel test all targets
         run: bazel test //...
+        continue-on-error: true
 
       - name: Bazel build all targets
         run: bazel build //...
