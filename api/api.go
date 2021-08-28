@@ -1,7 +1,7 @@
 package api
 
-type DB interface {
-	Save(interface{}) error
-	SaveAll(...interface{}) error
-	GetByID(string, interface{}) error
+type DbApi interface {
+	CreateSchema(schema string) error
+	Save(schema string, item interface{}) error
+	GetByID(schema string, id string) error
 }
