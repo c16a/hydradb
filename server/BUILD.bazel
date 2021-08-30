@@ -4,6 +4,10 @@ load("@io_bazel_rules_docker//go:image.bzl", "go_image")
 go_binary(
     name = "bin",
     srcs = ["main.go"],
+    deps = [
+        "//internal:lib",
+        "@com_github_spf13_afero//:go_default_library",
+    ],
 )
 
 go_image(
