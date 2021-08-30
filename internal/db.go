@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"github.com/spf13/afero"
 	"github.com/yalp/jsonpath"
 	"go.uber.org/zap"
 	"log"
@@ -17,11 +18,13 @@ type DB struct {
 }
 
 func InitDb(config *Config) (*DB, error) {
-	return &DB{
+	db := &DB{
 		config:      config,
 		schemaMutex: sync.RWMutex{},
 		logger:      setupLogger(),
-	}, nil
+	}
+	err := db.setupDataDir()
+	return db, err
 }
 
 func setupLogger() *zap.Logger {
@@ -29,12 +32,20 @@ func setupLogger() *zap.Logger {
 	return logger
 }
 
-func (d *DB) setupSchemasJson() error {
-	_, err := os.Create(path.Join(d.config.Storage.Directory, "schemas.json"))
-	if err != nil {
-		return err
+func (d *DB) setupDataDir() error {
+	fileSystem := d.config.Storage.Filesystem
+	_, err := fileSystem.Stat(d.config.Storage.Directory)
+	if err == nil {
+		return nil
 	}
-	return nil
+	if os.IsNotExist(err) {
+		// Directory doesn't exist. Make it.
+		err = fileSystem.MkdirAll(d.config.Storage.Directory, os.ModeDir)
+		if err != nil {
+			return err
+		}
+	}
+	return err
 }
 
 func (d *DB) Validate() error {
@@ -42,12 +53,14 @@ func (d *DB) Validate() error {
 }
 
 func (d *DB) CreateSchema(schema string) error {
+	fileSystem := d.config.Storage.Filesystem
+
 	d.schemaMutex.RLock()
 	defer d.schemaMutex.RUnlock()
 
 	schemasConfigPath := path.Join(d.config.Storage.Directory, "schemas.txt")
-	f, err := os.OpenFile(schemasConfigPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	defer func(f *os.File) {
+	f, err := fileSystem.OpenFile(schemasConfigPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	defer func(f afero.File) {
 		err := f.Close()
 		if err != nil {
 
@@ -58,12 +71,12 @@ func (d *DB) CreateSchema(schema string) error {
 		log.Fatal(err)
 	}
 
-	if _, err := f.Write([]byte(fmt.Sprintf("%s\n", schemasConfigPath))); err != nil {
+	if _, err := f.Write([]byte(fmt.Sprintf("%s\n", schema))); err != nil {
 		d.logger.Error("could not update schemas file", zap.Error(err))
 		return err
 	}
 
-	err = os.MkdirAll(path.Join(d.config.Storage.Directory, "schemas", schema), os.ModeDir)
+	err = fileSystem.MkdirAll(path.Join(d.config.Storage.Directory, "schemas", schema), os.ModeDir)
 	if err != nil {
 		d.logger.Error("could not create new schema directory", zap.Error(err))
 		return err

@@ -6,6 +6,7 @@ go_binary(
     srcs = ["main.go"],
     deps = [
         "//internal:lib",
+        "@com_github_spf13_afero//:go_default_library",
     ],
 )
 

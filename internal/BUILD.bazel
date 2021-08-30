@@ -9,6 +9,7 @@ go_library(
     importpath = "github.com/c16a/hydradb/internal",
     visibility = ["//visibility:public"],
     deps = [
+        "@com_github_spf13_afero//:go_default_library",
         "@com_github_yalp_jsonpath//:go_default_library",
         "@org_uber_go_zap//:go_default_library",
     ],
